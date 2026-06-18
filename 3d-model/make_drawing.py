@@ -16,10 +16,11 @@ H1, GAP2, GAP3 = 200, 300, 375
 H2 = H1 + GAP2       # 500
 H3 = H2 + GAP3       # 875  (top)
 
-# lengthwise slats across the width
-N_SLATS = max(2, round((WIDTH + 85) / (85 + TUBE)))
-STEP    = (WIDTH - TUBE) / (N_SLATS - 1)
-SLAT_GAP = STEP - TUBE
+# lengthwise slats across the width - exact clear gap, centred
+SLAT_GAP = 30
+N_SLATS  = max(2, (WIDTH + SLAT_GAP) // (SLAT_GAP + TUBE))
+MARGIN   = (WIDTH - (N_SLATS * TUBE + (N_SLATS - 1) * SLAT_GAP)) / 2
+PITCH    = TUBE + SLAT_GAP
 
 S = 0.62             # drawing scale, px per mm
 AR = "#1f3a4d"       # ink colour
@@ -117,15 +118,15 @@ text(TX(WIDTH / 2), ty0 - 35, "Полка — вид сверху", 18, "middle"
 # end rails (along width) front & back
 rect(TX(0), TY(0), WIDTH * S, TUBE * S)
 rect(TX(0), TY(DEPTH - TUBE), WIDTH * S, TUBE * S)
-# lengthwise slats (full depth)
+# lengthwise slats (full depth), centred with exact gap
 for i in range(N_SLATS):
-    rect(TX(i * STEP), TY(0), TUBE * S, DEPTH * S)
+    rect(TX(MARGIN + i * PITCH), TY(0), TUBE * S, DEPTH * S)
 
 dim_h(TX(0), TX(WIDTH), TY(0) - 22, TY(0), "280")
 dim_v(TY(0), TY(DEPTH), TX(WIDTH) + 40, TX(WIDTH), "550")
 # slat gap + slat width (between first two slats)
-dim_h(TX(TUBE), TX(STEP), TY(DEPTH) + 38, TY(DEPTH), f"{SLAT_GAP:.0f}")
-dim_h(TX(0), TX(TUBE), TY(DEPTH) + 64, TY(DEPTH), "25")
+dim_h(TX(MARGIN + TUBE), TX(MARGIN + PITCH), TY(DEPTH) + 38, TY(DEPTH), f"{SLAT_GAP:.0f}")
+dim_h(TX(MARGIN), TX(MARGIN + TUBE), TY(DEPTH) + 64, TY(DEPTH), "25")
 
 # ======================================================================
 #  Title block
@@ -137,7 +138,7 @@ line(40, tb_y + 35, 1220, tb_y + 35, "#0d2330", 1)
 line(820, tb_y, 820, tb_y + 70, "#0d2330", 1)
 text(60, tb_y + 23, "Стеллаж для цветочных горшков — 3 яруса", 16, "start", AR, weight="bold")
 text(60, tb_y + 58,
-     f"Труба 25×25 мм · полки: рейки вдоль длины ({N_SLATS} шт), просвет ≈{SLAT_GAP:.0f} мм",
+     f"Труба 25×25 мм · полки: рейки вдоль длины ({N_SLATS} шт), просвет {SLAT_GAP} мм",
      13, "start", "#33424c")
 text(840, tb_y + 23, "Размеры в мм", 14, "start", "#33424c")
 text(840, tb_y + 50, "Габарит: 280 × 550 × 875", 14, "start", "#33424c")
@@ -160,4 +161,4 @@ svg = f'''<?xml version="1.0" encoding="UTF-8"?>
 with open("drawing.svg", "w", encoding="utf-8") as f:
     f.write(svg)
 print("wrote drawing.svg")
-print(f"slats={N_SLATS}  step={STEP:.1f}  clear gap={SLAT_GAP:.1f} mm")
+print(f"slats={N_SLATS}  margin={MARGIN:.1f}  clear gap={SLAT_GAP} mm")

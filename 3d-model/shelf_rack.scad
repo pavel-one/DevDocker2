@@ -25,7 +25,7 @@ gap3 = 375;     // distance to top shelf (35-40 cm -> 37.5 cm)
 
 /* [Construction] */
 tube = 25;            // square tube cross-section (25 x 25 mm)
-slat_gap = 85;        // target clear gap between shelf slats (lets light through)
+slat_gap = 30;        // exact clear gap between shelf slats (mm)
 slats_lengthwise = true;  // true: slats run along the 550 mm length (full width of the shelf)
 
 // Derived heights (top surface of each shelf rail)
@@ -41,9 +41,10 @@ module leg(x, y) {
         cube([tube, tube, top_height]);
 }
 
-// ---- helper: even slat count for a target clear gap over a span ----
-function slat_count(span) = max(2, round((span + slat_gap) / (slat_gap + tube)));
-function slat_step(span, n) = (span - tube) / (n - 1);  // centre-to-centre pitch
+// ---- slat layout: exact clear gap = slat_gap, slats centred over the span ----
+function slat_n(span)      = max(2, floor((span + slat_gap) / (slat_gap + tube)));
+function slat_margin(span, n) = (span - (n * tube + (n - 1) * slat_gap)) / 2;  // equal end margins
+pitch = tube + slat_gap;  // slat centre-to-centre
 
 // ---- helper: one shelf made of slatted tube at height h ----
 //  h = z of the TOP surface of the shelf (rails + slats are flush)
@@ -59,19 +60,20 @@ module shelf_frame(h) {
         translate([0, 0,            z]) cube([width, tube, tube]);
         translate([0, depth - tube, z]) cube([width, tube, tube]);
 
-        // Slats run along Y (the full 550 mm length), spread across the width.
-        n    = slat_count(width);
-        step = slat_step(width, n);
+        // Slats run along Y (the full 550 mm length), spread across the width
+        // with an exact clear gap of slat_gap.
+        n = slat_n(width);
+        m = slat_margin(width, n);
         for (i = [0 : n - 1])
-            translate([i * step, 0, z]) cube([tube, depth, tube]);
+            translate([m + i * pitch, 0, z]) cube([tube, depth, tube]);
     } else {
         // Slats run across the 280 mm width, spread along the 550 mm depth.
         translate([0,            0, z]) cube([tube, depth, tube]);
         translate([width - tube, 0, z]) cube([tube, depth, tube]);
-        n    = slat_count(depth);
-        step = slat_step(depth, n);
+        n = slat_n(depth);
+        m = slat_margin(depth, n);
         for (i = [0 : n - 1])
-            translate([tube, i * step, z]) cube([width - 2 * tube, tube, tube]);
+            translate([tube, m + i * pitch, z]) cube([width - 2 * tube, tube, tube]);
     }
 }
 
