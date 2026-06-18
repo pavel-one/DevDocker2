@@ -54,10 +54,10 @@ module shelf_frame(h) {
     z = h - tube;   // bottom of the rails / slats
 
     if (slats_lengthwise) {
-        // Cross-rails run along X (the 280 mm width): front, middle, back.
-        // They tie the legs together and carry/support the lengthwise slats.
-        for (yy = [0, (depth - tube) / 2, depth - tube])
-            translate([0, yy, z]) cube([width, tube, tube]);
+        // Two end rails run along X (the 280 mm width) at the front and back.
+        // They only tie the legs together and cap the slat ends - no grid.
+        translate([0, 0,            z]) cube([width, tube, tube]);
+        translate([0, depth - tube, z]) cube([width, tube, tube]);
 
         // Slats run along Y (the full 550 mm length), spread across the width.
         n    = slat_count(width);
