@@ -24,8 +24,8 @@ gap2 = 300;     // distance to middle shelf
 gap3 = 375;     // distance to top shelf (35-40 cm -> 37.5 cm)
 
 /* [Construction] */
-tube = 20;      // square tube cross-section (20 x 20 mm)
-crossbars = true;  // add intermediate support bars on each shelf
+tube = 25;        // square tube cross-section (25 x 25 mm)
+slat_gap = 85;    // target clear gap between shelf slats (lets light through)
 
 // Derived heights (top surface of each shelf rail)
 h2 = h1 + gap2;          // 500
@@ -40,26 +40,27 @@ module leg(x, y) {
         cube([tube, tube, top_height]);
 }
 
-// ---- helper: one rectangular shelf frame at height h -------
-//  h = z of the TOP surface of the frame rails
+// ---- helper: one shelf made of slatted tube at height h ----
+//  h = z of the TOP surface of the shelf (frame + slats are flush)
+//  The slats are the same 25x25 tube, spaced with a clear gap so
+//  light reaches the shelves below.
 module shelf_frame(h) {
-    z = h - tube;   // bottom of the rails
+    z = h - tube;   // bottom of the rails / slats
 
-    // Two long side rails (run along Y, the 550 mm depth)
+    // Two long side rails (run along Y, the 550 mm depth) - carry the slats
     translate([0,            0, z]) cube([tube, depth, tube]);
     translate([width - tube, 0, z]) cube([tube, depth, tube]);
 
-    // Front and back rails (run along X), fitted between side rails
-    inner_w = width - 2 * tube;
-    translate([tube, 0,            z]) cube([inner_w, tube, tube]);
-    translate([tube, depth - tube, z]) cube([inner_w, tube, tube]);
+    // Slats run along X (the 280 mm width), seated between the side rails,
+    // distributed along Y (the depth) with equal clear gaps. The first and
+    // last slats sit flush with the front/back edges and double as end rails.
+    inner_w = width - 2 * tube;                                   // span of each slat (X)
+    n   = max(2, round((depth + slat_gap) / (slat_gap + tube)));  // slat count for ~slat_gap
+    gap = (depth - n * tube) / (n - 1);                           // resulting equal clear gap
 
-    // Intermediate cross supports (run along X) for the shelf surface
-    if (crossbars) {
-        for (f = [1/3, 2/3]) {
-            ypos = f * (depth - tube);
-            translate([tube, ypos, z]) cube([inner_w, tube, tube]);
-        }
+    for (i = [0 : n - 1]) {
+        translate([tube, i * (tube + gap), z])
+            cube([inner_w, tube, tube]);
     }
 }
 
