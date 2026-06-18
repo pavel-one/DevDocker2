@@ -24,8 +24,9 @@ gap2 = 300;     // distance to middle shelf
 gap3 = 375;     // distance to top shelf (35-40 cm -> 37.5 cm)
 
 /* [Construction] */
-tube = 25;        // square tube cross-section (25 x 25 mm)
-slat_gap = 85;    // target clear gap between shelf slats (lets light through)
+tube = 25;            // square tube cross-section (25 x 25 mm)
+slat_gap = 85;        // target clear gap between shelf slats (lets light through)
+slats_lengthwise = true;  // true: slats run along the 550 mm length (full width of the shelf)
 
 // Derived heights (top surface of each shelf rail)
 h2 = h1 + gap2;          // 500
@@ -40,27 +41,37 @@ module leg(x, y) {
         cube([tube, tube, top_height]);
 }
 
+// ---- helper: even slat count for a target clear gap over a span ----
+function slat_count(span) = max(2, round((span + slat_gap) / (slat_gap + tube)));
+function slat_step(span, n) = (span - tube) / (n - 1);  // centre-to-centre pitch
+
 // ---- helper: one shelf made of slatted tube at height h ----
-//  h = z of the TOP surface of the shelf (frame + slats are flush)
-//  The slats are the same 25x25 tube, spaced with a clear gap so
-//  light reaches the shelves below.
+//  h = z of the TOP surface of the shelf (rails + slats are flush)
+//  Slats are the same 25x25 tube, spaced with a clear gap so light reaches
+//  the shelves below. Slats run along the 550 mm length so flower pots rest
+//  on continuous rails, supported by cross-rails underneath.
 module shelf_frame(h) {
     z = h - tube;   // bottom of the rails / slats
 
-    // Two long side rails (run along Y, the 550 mm depth) - carry the slats
-    translate([0,            0, z]) cube([tube, depth, tube]);
-    translate([width - tube, 0, z]) cube([tube, depth, tube]);
+    if (slats_lengthwise) {
+        // Cross-rails run along X (the 280 mm width): front, middle, back.
+        // They tie the legs together and carry/support the lengthwise slats.
+        for (yy = [0, (depth - tube) / 2, depth - tube])
+            translate([0, yy, z]) cube([width, tube, tube]);
 
-    // Slats run along X (the 280 mm width), seated between the side rails,
-    // distributed along Y (the depth) with equal clear gaps. The first and
-    // last slats sit flush with the front/back edges and double as end rails.
-    inner_w = width - 2 * tube;                                   // span of each slat (X)
-    n   = max(2, round((depth + slat_gap) / (slat_gap + tube)));  // slat count for ~slat_gap
-    gap = (depth - n * tube) / (n - 1);                           // resulting equal clear gap
-
-    for (i = [0 : n - 1]) {
-        translate([tube, i * (tube + gap), z])
-            cube([inner_w, tube, tube]);
+        // Slats run along Y (the full 550 mm length), spread across the width.
+        n    = slat_count(width);
+        step = slat_step(width, n);
+        for (i = [0 : n - 1])
+            translate([i * step, 0, z]) cube([tube, depth, tube]);
+    } else {
+        // Slats run across the 280 mm width, spread along the 550 mm depth.
+        translate([0,            0, z]) cube([tube, depth, tube]);
+        translate([width - tube, 0, z]) cube([tube, depth, tube]);
+        n    = slat_count(depth);
+        step = slat_step(depth, n);
+        for (i = [0 : n - 1])
+            translate([tube, i * step, z]) cube([width - 2 * tube, tube, tube]);
     }
 }
 
