@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>3D модель стеллажа — просмотр</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #eceff1; font-family: system-ui, sans-serif; }
+  #info {
+    position: fixed; top: 12px; left: 12px; padding: 10px 14px;
+    background: rgba(255,255,255,.85); border-radius: 8px; font-size: 13px;
+    color: #37474f; line-height: 1.5; box-shadow: 0 2px 8px rgba(0,0,0,.1);
+  }
+  #info b { color: #263238; }
+  canvas { display: block; }
+</style>
+</head>
+<body>
+<div id="info">
+  <b>Стеллаж 3-х ярусный</b><br>
+  Габарит: 280 × 550 мм<br>
+  Полки от пола: 200 / 500 / 875 мм<br>
+  <span style="color:#78909c">Мышь — вращать, колесо — зум</span>
+</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { STLLoader } from 'three/addons/loaders/STLLoader.js';
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0xeceff1);
+
+const camera = new THREE.PerspectiveCamera(45, innerWidth / innerHeight, 1, 10000);
+camera.position.set(700, 700, 1100);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(devicePixelRatio);
+document.body.appendChild(renderer.domElement);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+
+scene.add(new THREE.HemisphereLight(0xffffff, 0x556677, 1.0));
+const dir = new THREE.DirectionalLight(0xffffff, 1.4);
+dir.position.set(1, 2, 1.5);
+scene.add(dir);
+
+// ground grid
+const grid = new THREE.GridHelper(2000, 40, 0xb0bec5, 0xcfd8dc);
+scene.add(grid);
+
+new STLLoader().load('shelf_rack.stl', (geom) => {
+  geom.computeVertexNormals();
+  const mat = new THREE.MeshStandardMaterial({ color: 0x607d8b, metalness: 0.6, roughness: 0.45 });
+  const mesh = new THREE.Mesh(geom, mat);
+
+  // STL is built with Z up; rotate to Y up for the viewer
+  mesh.rotation.x = -Math.PI / 2;
+
+  geom.computeBoundingBox();
+  const bb = geom.boundingBox;
+  // center on footprint, sit on the grid
+  mesh.position.set(-(bb.max.x + bb.min.x) / 2, 0, (bb.max.y + bb.min.y) / 2);
+  scene.add(mesh);
+
+  controls.target.set(0, (bb.max.z - bb.min.z) / 2, 0);
+  controls.update();
+});
+
+addEventListener('resize', () => {
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+
+(function animate() {
+  requestAnimationFrame(animate);
+  controls.update();
+  renderer.render(scene, camera);
+})();
+</script>
+</body>
+</html>
